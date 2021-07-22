@@ -1,3 +1,4 @@
+package semaphore;
 
 public enum PhilosopherState {
     
