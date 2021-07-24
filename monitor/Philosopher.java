@@ -1,10 +1,10 @@
-package semaphore;
+package monitor;
 
 import java.util.concurrent.Semaphore;
 
 public class Philosopher implements Runnable {
 
-    private static final long SLEEP_TIME = 2000;
+    private static final long SLEEP_TIME = 3000;
 
     private Integer id;
 
@@ -14,13 +14,10 @@ public class Philosopher implements Runnable {
 
     private Table table;
 
-    private Semaphore stateMutex;
-
     public Philosopher(String name, Integer id, Table table) {
         this.name = name;
         this.id = id;
         this.table = table;
-        this.stateMutex = table.getStateMutex();
     }
 
     @Override
@@ -53,21 +50,20 @@ public class Philosopher implements Runnable {
 
     private void grabForks() throws Exception {
 
-        stateMutex.acquire(); // begin of critical region
+        synchronized (table) {
 
-        state = PhilosopherState.HUNGRY;
-
-        if (table.nextPhilosopher(id).getState() != PhilosopherState.EATING &&
-            table.previousPhilosopher(id).getState() != PhilosopherState.EATING) {
+            state = PhilosopherState.HUNGRY;
             
-            state = PhilosopherState.EATING;
-
-            // allow eating
-            table.getFork(id).release();
+            if (table.nextPhilosopher(id).getState() != PhilosopherState.EATING &&
+            table.previousPhilosopher(id).getState() != PhilosopherState.EATING) {
+                
+                state = PhilosopherState.EATING;
+                
+                // allow eating
+                table.getFork(id).release();
+            }
         }
-
-        stateMutex.release(); // end of critical region
-
+            
         // sleep until fork is free if is not eating
         table.getFork(id).acquire();
     }
@@ -80,27 +76,27 @@ public class Philosopher implements Runnable {
     }
 
     private void leaveForks() throws Exception {
+        synchronized (table) {
 
-        stateMutex.acquire();
-        state = PhilosopherState.THINKING;
+            state = PhilosopherState.THINKING;
 
-        // wake up right philosopher
-        if (table.nextPhilosopher(id).getState() == PhilosopherState.HUNGRY &&
-            table.nextNextPhilosopher(id).getState() != PhilosopherState.EATING) {
-            
-            table.nextPhilosopher(id).setState(PhilosopherState.EATING);
-            table.nextFork(id).release();
+            // wake up right philosopher
+            if (table.nextPhilosopher(id).getState() == PhilosopherState.HUNGRY &&
+                table.nextNextPhilosopher(id).getState() != PhilosopherState.EATING) {
+                
+                table.nextPhilosopher(id).setState(PhilosopherState.EATING);
+                table.nextFork(id).release();
+            }
+
+            // wake up left philosopher
+            if (table.previousPhilosopher(id).getState() == PhilosopherState.HUNGRY &&
+                table.prevPrevPhilosopher(id).getState() != PhilosopherState.EATING) {
+
+                table.previousPhilosopher(id).setState(PhilosopherState.EATING);
+                table.previousFork(id).release();
+            }
+
         }
-
-        // wake up left philosopher
-        if (table.previousPhilosopher(id).getState() == PhilosopherState.HUNGRY &&
-            table.prevPrevPhilosopher(id).getState() != PhilosopherState.EATING) {
-
-            table.previousPhilosopher(id).setState(PhilosopherState.EATING);
-            table.previousFork(id).release();
-        }
-
-        stateMutex.release();
     }
 
     public Integer getId() {
@@ -118,5 +114,5 @@ public class Philosopher implements Runnable {
     public void setState(PhilosopherState state) {
         this.state = state;
     }
-    
+
 }

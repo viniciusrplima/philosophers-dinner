@@ -1,4 +1,4 @@
-package semaphore;
+package monitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +9,6 @@ public class Table {
     private List<Philosopher> philosophers = new ArrayList<>();
 
     private List<Semaphore> forks = new ArrayList<>();
-
-    private Semaphore stateMutex = new Semaphore(1);
 
     public void addPhilosopher(String name) {
         Philosopher philosopher = new Philosopher(name, philosophers.size(), this);
@@ -23,10 +21,6 @@ public class Table {
 
     public Integer previousIndex(Integer id) {
         return (id + philosophers.size() - 1) % philosophers.size();
-    }
-
-    public Philosopher getPhilosopher(Integer id) {
-        return philosophers.get(id);
     }
 
     public Philosopher nextPhilosopher(Integer id) {
@@ -61,10 +55,6 @@ public class Table {
     public Semaphore previousFork(Integer id) {
         id = previousIndex(id);
         return forks.get(id);
-    }
-
-    public Semaphore getStateMutex() {
-        return stateMutex;
     }
 
     public void initialize() {
